@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-poem = "3"
+poem = { version = "3", features = ["server"] }
 poem-openapi = { version = "5", features = ["swagger-ui"] }
+reqwest = "0.12"
 tokio = { version = "1", features = ["full"] }

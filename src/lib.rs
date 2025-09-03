@@ -1,4 +1,4 @@
-use poem::{Route, Server, listener::TcpListener};
+use poem::{Route, Server, listener};
 use poem_openapi::{OpenApi, OpenApiService, payload::PlainText};
 
 struct EHRApi;
@@ -11,29 +11,24 @@ impl EHRApi {
     }
 }
 
-pub struct EHRApp;
+pub struct EHRApp {
+    app_address: String,
+}
 
 impl EHRApp {
-    fn new() -> Self {
-        EHRApp {}
+    pub fn build(address: String) -> Self {
+        EHRApp {
+            app_address: address,
+        }
     }
 
     pub async fn run(&self) -> Result<(), std::io::Error> {
-        let api_service =
-            OpenApiService::new(EHRApi, "EHR API", "1.0").server("http://localhost:3000/api");
+        let api_service = OpenApiService::new(EHRApi, "EHR API", "1.0")
+            .server(format!("http://{}/api", self.app_address));
         let ui = api_service.swagger_ui();
         let app = Route::new().nest("/api", api_service).nest("/docs", ui);
 
-        Server::new(TcpListener::bind("127.0.0.1:3000"))
-            .run(app)
-            .await?;
-
-        Ok(())
-    }
-}
-
-impl Default for EHRApp {
-    fn default() -> Self {
-        Self::new()
+        let listener = listener::TcpListener::bind(&self.app_address);
+        Server::new(listener).run(app).await
     }
 }
