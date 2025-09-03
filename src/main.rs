@@ -4,7 +4,9 @@ use lgr_ehr::{EHRApp, utils::tracing::init_tracing};
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();
 
-    let app = EHRApp::build("127.0.0.1:3000".into());
+    let address = std::env::var("BIND_ADDRESS").unwrap_or_else(|_| "0.0.0.0:3000".into());
+
+    let app = EHRApp::build(address);
     app.run().await?;
 
     Ok(())

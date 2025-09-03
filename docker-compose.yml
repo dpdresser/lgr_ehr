@@ -1,0 +1,9 @@
+services:
+  lgr_ehr:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - RUST_LOG=info
+    volumes:
+      - ./logs:/app/logs
