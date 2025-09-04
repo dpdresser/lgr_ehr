@@ -1,9 +1,14 @@
 services:
-  lgr_ehr:
+  api:
     build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - RUST_LOG=info
+    ports: ["3000:3000"]
     volumes:
-      - ./logs:/app/logs
+      - logs_volume:/app/logs
+    healthcheck:
+      test: ["CMD", "/app/lgr_ehr", "--health"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+
+volumes:
+  logs_volume:
