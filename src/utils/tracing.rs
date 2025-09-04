@@ -4,7 +4,10 @@ use tracing_appender::{
 };
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, registry, util::SubscriberInitExt};
 
+use crate::utils::config::AppSettings;
+
 pub fn init_tracing() {
+    let settings = AppSettings::from_env();
     let file_appender = RollingFileAppender::new(Rotation::DAILY, "./logs", "lgr_ehr.log");
 
     let (non_blocking_file, _guard) = non_blocking(file_appender);
@@ -25,7 +28,7 @@ pub fn init_tracing() {
                 .with_writer(non_blocking_stdout)
                 .with_ansi(true),
         )
-        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
+        .with(EnvFilter::new(&settings.rust_log))
         .init();
 
     std::mem::forget(_guard);

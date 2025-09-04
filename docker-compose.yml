@@ -1,6 +1,14 @@
 services:
-  api:
+  lgr_ehr:
     build: .
+    image: lgr_ehr:dev
+    depends_on:
+      - db
+    environment:
+      - APP_HOST=0.0.0.0
+      - APP_PORT=3000
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/ehr
+      - RUST_LOG=info,sqlx=warn
     ports: ["3000:3000"]
     volumes:
       - logs_volume:/app/logs
@@ -10,5 +18,17 @@ services:
       timeout: 2s
       retries: 3
 
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ehr
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
 volumes:
   logs_volume:
+  db_data:
