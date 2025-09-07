@@ -1,6 +1,6 @@
-use lgr_ehr::{utils::config::AppSettings, EHRApp};
+use lgr_ehr::{EHRApp, utils::config::AppSettings};
 use secrecy::ExposeSecret;
-use sqlx::{postgres::PgPoolOptions, Executor, PgPool};
+use sqlx::{Executor, PgPool, postgres::PgPoolOptions};
 
 pub struct TestApp {
     address: String,
@@ -23,9 +23,7 @@ impl TestApp {
         let app = EHRApp::build(settings.clone());
 
         // Spawn the server
-        tokio::spawn(async move {
-            app.run().await.expect("Failed to start test server")
-        });
+        tokio::spawn(async move { app.run().await.expect("Failed to start test server") });
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
         let address = format!("http://{}", settings.app_address());
@@ -60,8 +58,11 @@ impl TestApp {
 impl Drop for TestApp {
     fn drop(&mut self) {
         if !self.cleanup_called {
-            panic!("TestApp was dropped without calling cleanup(). Database {} may not be deleted.", self.db_name);
-       }
+            panic!(
+                "TestApp was dropped without calling cleanup(). Database {} may not be deleted.",
+                self.db_name
+            );
+        }
     }
 }
 
@@ -104,7 +105,10 @@ async fn create_test_database() -> (PgPool, String) {
 async fn cleanup_test_database(db_name: &str) {
     let admin_db_url = AppSettings::admin_database_url();
 
-    if let Ok(admin_connection) = PgPoolOptions::new().connect(&admin_db_url.expose_secret()).await {
+    if let Ok(admin_connection) = PgPoolOptions::new()
+        .connect(&admin_db_url.expose_secret())
+        .await
+    {
         // Terminate connections to test database
         let _ = admin_connection
             .execute(

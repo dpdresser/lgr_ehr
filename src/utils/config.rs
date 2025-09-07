@@ -14,8 +14,8 @@ impl AppSettings {
         dotenvy::dotenv().ok();
 
         // App settings
-        let app_host = std::env::var("APP_HOST")
-            .expect("APP_HOST must be set in .env or environment");
+        let app_host =
+            std::env::var("APP_HOST").expect("APP_HOST must be set in .env or environment");
 
         let app_port = std::env::var("APP_PORT")
             .expect("APP_PORT must be set in .env or environment")
@@ -23,23 +23,17 @@ impl AppSettings {
             .unwrap_or(3000);
 
         // Database settings
-        let db_password = std::env::var("DB_PASSWORD")
-            .expect("DB_PASSWORD must be set in .env or environment");
+        let db_password =
+            std::env::var("DB_PASSWORD").expect("DB_PASSWORD must be set in .env or environment");
 
-        let db_host = std::env::var("DB_HOST")
-            .expect("DB_HOST must be set in .env or environment");
-        let db_port = std::env::var("DB_PORT")
-            .expect("DB_PORT must be set in .env or environment");
-        let db_name = std::env::var("DB_NAME")
-            .expect("DB_NAME must be set in .env or environment");
-        let db_user = std::env::var("DB_USER")
-            .expect("DB_USER must be set in .env or environment");
+        let db_host = std::env::var("DB_HOST").expect("DB_HOST must be set in .env or environment");
+        let db_port = std::env::var("DB_PORT").expect("DB_PORT must be set in .env or environment");
+        let db_name = std::env::var("DB_NAME").expect("DB_NAME must be set in .env or environment");
+        let db_user = std::env::var("DB_USER").expect("DB_USER must be set in .env or environment");
 
         // Construct the database URL
-        let database_url = format!(
-            "postgres://{}:{}@{}:{}/{}",
-            db_user, db_password, db_host, db_port, db_name
-        );
+        let database_url =
+            format!("postgres://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}");
 
         // Logging settings
         let log_level = std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".into());
@@ -86,20 +80,15 @@ impl AppSettings {
     // Helper function to build database URL for any database name
     fn build_database_url(db_name: &str) -> SecretString {
         dotenvy::dotenv().ok();
-        
-        let db_user = std::env::var("DB_USER")
-            .expect("DB_USER must be set in .env or environment");
-        let db_password = std::env::var("DB_PASSWORD")
-            .expect("DB_PASSWORD must be set in .env or environment");
+
+        let db_user = std::env::var("DB_USER").expect("DB_USER must be set in .env or environment");
+        let db_password =
+            std::env::var("DB_PASSWORD").expect("DB_PASSWORD must be set in .env or environment");
         let db_host = "localhost";
-        let db_port = std::env::var("DB_PORT")
-            .expect("DB_PORT must be set in .env or environment");
-        
-        let db_url = format!(
-            "postgres://{}:{}@{}:{}/{}",
-            db_user, db_password, db_host, db_port, db_name
-        );
-        
+        let db_port = std::env::var("DB_PORT").expect("DB_PORT must be set in .env or environment");
+
+        let db_url = format!("postgres://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}");
+
         SecretString::from(db_url)
     }
 

@@ -29,12 +29,8 @@ pub struct EHRApp {
 }
 
 impl EHRApp {
-    pub fn build(
-            config: AppSettings,
-    ) -> Self {
-        EHRApp {
-            config,
-        }
+    pub fn build(config: AppSettings) -> Self {
+        EHRApp { config }
     }
 
     pub async fn run(&self) -> Result<(), std::io::Error> {
