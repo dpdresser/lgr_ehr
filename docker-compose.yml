@@ -5,10 +5,14 @@ services:
     depends_on:
       - db
     environment:
-      - APP_HOST=0.0.0.0
-      - APP_PORT=3000
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/ehr
-      - RUST_LOG=info,sqlx=warn
+      - APP_HOST=${APP_HOST}
+      - APP_PORT=${APP_PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - RUST_LOG=${RUST_LOG}
     ports: ["3000:3000"]
     volumes:
       - logs_volume:/app/logs
@@ -21,9 +25,9 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=ehr
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
