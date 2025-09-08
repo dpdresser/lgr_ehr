@@ -17,10 +17,10 @@ FROM gcr.io/distroless/cc-debian12
 
 WORKDIR /app
 
-# Copy the correct binary name (should match your Cargo.toml name)
+# Copy the correct binary name
 COPY --from=builder /app/target/release/lgr_ehr /app/lgr_ehr
 
-# Copy CA certificates from builder (Alpine has them)
+# Copy CA certificates from builder
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 EXPOSE 3000

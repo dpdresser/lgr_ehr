@@ -6,11 +6,9 @@ use lgr_ehr::{
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = AppSettings::from_env();
-    init_tracing();
+    init_tracing(config.log_level());
 
-    let address = format!("{}:{}", config.app_host, config.app_port);
-
-    let app = EHRApp::build(address);
+    let app = EHRApp::build(config);
     app.run().await?;
 
     Ok(())

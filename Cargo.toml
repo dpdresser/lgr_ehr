@@ -9,6 +9,7 @@ dotenvy = "0.15"
 poem = "3"
 poem-openapi = { version = "5", features = ["swagger-ui"] }
 reqwest = "0.12"
+secrecy = "0.10"
 serde = { version = "1", features = ["derive"] }
 sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "migrate"] }
 thiserror = "2"
@@ -16,3 +17,4 @@ tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4"] }
