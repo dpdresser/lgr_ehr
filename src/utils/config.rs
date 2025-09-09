@@ -1,11 +1,15 @@
 use secrecy::SecretString;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AppSettings {
     app_host: String,
     app_port: u16,
     database_url: SecretString,
     log_level: String,
+    key_cloak_base_url: String,
+    key_cloak_realm: String,
+    key_cloak_client_id: String,
+    key_cloak_client_secret: Option<SecretString>,
 }
 
 impl AppSettings {
@@ -38,11 +42,26 @@ impl AppSettings {
         // Logging settings
         let log_level = std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".into());
 
+        // Keycloak settings
+        let key_cloak_base_url = std::env::var("KEYCLOAK_BASE_URL")
+            .expect("KEYCLOAK_BASE_URL must be set in .env or environment");
+        let key_cloak_realm = std::env::var("KEYCLOAK_REALM")
+            .expect("KEYCLOAK_REALM must be set in .env or environment");
+        let key_cloak_client_id = std::env::var("KEYCLOAK_CLIENT_ID")
+            .expect("KEYCLOAK_CLIENT_ID must be set in .env or environment");
+        let key_cloak_client_secret = std::env::var("KEYCLOAK_CLIENT_SECRET")
+            .ok()
+            .map(SecretString::from);
+
         Self {
             app_host,
             app_port,
             database_url: SecretString::from(database_url),
             log_level,
+            key_cloak_base_url,
+            key_cloak_realm,
+            key_cloak_client_id,
+            key_cloak_client_secret,
         }
     }
 
@@ -54,11 +73,26 @@ impl AppSettings {
             .unwrap()
             .port();
 
+        // Keycloak settings
+        let key_cloak_base_url = std::env::var("KEYCLOAK_BASE_URL")
+            .expect("KEYCLOAK_BASE_URL must be set in .env or environment");
+        let key_cloak_realm = std::env::var("KEYCLOAK_REALM")
+            .expect("KEYCLOAK_REALM must be set in .env or environment");
+        let key_cloak_client_id = std::env::var("KEYCLOAK_CLIENT_ID")
+            .expect("KEYCLOAK_CLIENT_ID must be set in .env or environment");
+        let key_cloak_client_secret = std::env::var("KEYCLOAK_CLIENT_SECRET")
+            .ok()
+            .map(SecretString::from);
+
         Self {
             app_host: "127.0.0.1".into(),
             app_port: port,
             database_url,
             log_level: "info".into(),
+            key_cloak_base_url,
+            key_cloak_realm,
+            key_cloak_client_id,
+            key_cloak_client_secret,
         }
     }
 
@@ -100,5 +134,22 @@ impl AppSettings {
     // Build database URL for a specific database name
     pub fn database_url_for(db_name: &str) -> SecretString {
         Self::build_database_url(db_name)
+    }
+
+    // Keycloak settings accessors
+    pub fn key_cloak_base_url(&self) -> &str {
+        &self.key_cloak_base_url
+    }
+
+    pub fn key_cloak_realm(&self) -> &str {
+        &self.key_cloak_realm
+    }
+
+    pub fn key_cloak_client_id(&self) -> &str {
+        &self.key_cloak_client_id
+    }
+
+    pub fn key_cloak_client_secret(&self) -> Option<&SecretString> {
+        self.key_cloak_client_secret.as_ref()
     }
 }

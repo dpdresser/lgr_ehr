@@ -46,6 +46,15 @@ impl TestApp {
             .expect("Failed to execute request")
     }
 
+    pub async fn post_signup(&self, body: serde_json::Value) -> reqwest::Response {
+        self.http_client
+            .post(format!("{}/api/auth/signup", &self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request")
+    }
+
     pub async fn cleanup(&mut self) {
         if !self.cleanup_called {
             cleanup_test_database(&self.db_name).await;
