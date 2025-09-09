@@ -30,7 +30,7 @@ pub enum SignupResult {
     BadRequest(Json<serde_json::Value>),
     #[oai(status = 409)]
     Conflict(Json<serde_json::Value>),
-    #[oai(status = 501)]
+    #[oai(status = 500)]
     ServerError(Json<serde_json::Value>),
 }
 
