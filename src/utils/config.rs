@@ -67,6 +67,8 @@ impl AppSettings {
 
     // Builder for tests w/ specific DB URL
     pub fn for_tests(database_url: SecretString) -> Self {
+        dotenvy::dotenv().ok();
+
         let port = std::net::TcpListener::bind("127.0.0.1:0")
             .unwrap()
             .local_addr()
