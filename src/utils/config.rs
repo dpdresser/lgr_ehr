@@ -6,10 +6,12 @@ pub struct AppSettings {
     app_port: u16,
     database_url: SecretString,
     log_level: String,
-    key_cloak_base_url: String,
-    key_cloak_realm: String,
-    key_cloak_client_id: String,
-    key_cloak_client_secret: Option<SecretString>,
+    keycloak_base_url: String,
+    keycloak_realm: String,
+    keycloak_client_id: String,
+    keycloak_client_secret: Option<SecretString>,
+    tls_cert_path: String,
+    tls_key_path: String,
 }
 
 impl AppSettings {
@@ -43,25 +45,33 @@ impl AppSettings {
         let log_level = std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".into());
 
         // Keycloak settings
-        let key_cloak_base_url = std::env::var("KEYCLOAK_BASE_URL")
+        let keycloak_base_url = std::env::var("KEYCLOAK_BASE_URL_PROD")
             .expect("KEYCLOAK_BASE_URL must be set in .env or environment");
-        let key_cloak_realm = std::env::var("KEYCLOAK_REALM")
+        let keycloak_realm = std::env::var("KEYCLOAK_REALM")
             .expect("KEYCLOAK_REALM must be set in .env or environment");
-        let key_cloak_client_id = std::env::var("KEYCLOAK_CLIENT_ID")
+        let keycloak_client_id = std::env::var("KEYCLOAK_CLIENT_ID")
             .expect("KEYCLOAK_CLIENT_ID must be set in .env or environment");
-        let key_cloak_client_secret = std::env::var("KEYCLOAK_CLIENT_SECRET")
+        let keycloak_client_secret = std::env::var("KEYCLOAK_CLIENT_SECRET")
             .ok()
             .map(SecretString::from);
+
+        // TLS settings
+        let tls_cert_path =
+            std::env::var("TLS_CERT_PATH").unwrap_or_else(|_| "certs/dev/cert.pem".into());
+        let tls_key_path =
+            std::env::var("TLS_KEY_PATH").unwrap_or_else(|_| "certs/dev/key.pem".into());
 
         Self {
             app_host,
             app_port,
             database_url: SecretString::from(database_url),
             log_level,
-            key_cloak_base_url,
-            key_cloak_realm,
-            key_cloak_client_id,
-            key_cloak_client_secret,
+            keycloak_base_url,
+            keycloak_realm,
+            keycloak_client_id,
+            keycloak_client_secret,
+            tls_cert_path,
+            tls_key_path,
         }
     }
 
@@ -76,25 +86,33 @@ impl AppSettings {
             .port();
 
         // Keycloak settings
-        let key_cloak_base_url = std::env::var("KEYCLOAK_BASE_URL")
+        let keycloak_base_url = std::env::var("KEYCLOAK_BASE_URL_DEV")
             .expect("KEYCLOAK_BASE_URL must be set in .env or environment");
-        let key_cloak_realm = std::env::var("KEYCLOAK_REALM")
+        let keycloak_realm = std::env::var("KEYCLOAK_REALM")
             .expect("KEYCLOAK_REALM must be set in .env or environment");
-        let key_cloak_client_id = std::env::var("KEYCLOAK_CLIENT_ID")
+        let keycloak_client_id = std::env::var("KEYCLOAK_CLIENT_ID")
             .expect("KEYCLOAK_CLIENT_ID must be set in .env or environment");
-        let key_cloak_client_secret = std::env::var("KEYCLOAK_CLIENT_SECRET")
+        let keycloak_client_secret = std::env::var("KEYCLOAK_CLIENT_SECRET")
             .ok()
             .map(SecretString::from);
+
+        // TLS settings
+        let tls_cert_path =
+            std::env::var("TLS_CERT_PATH").unwrap_or_else(|_| "certs/dev/cert.pem".into());
+        let tls_key_path =
+            std::env::var("TLS_KEY_PATH").unwrap_or_else(|_| "certs/dev/key.pem".into());
 
         Self {
             app_host: "127.0.0.1".into(),
             app_port: port,
             database_url,
             log_level: "info".into(),
-            key_cloak_base_url,
-            key_cloak_realm,
-            key_cloak_client_id,
-            key_cloak_client_secret,
+            keycloak_base_url,
+            keycloak_realm,
+            keycloak_client_id,
+            keycloak_client_secret,
+            tls_cert_path,
+            tls_key_path,
         }
     }
 
@@ -106,6 +124,11 @@ impl AppSettings {
     // Returns the full application address in the format "host:port"
     pub fn app_address(&self) -> String {
         format!("{}:{}", self.app_host, self.app_port)
+    }
+
+    // Returns the application host
+    pub fn app_host(&self) -> &str {
+        &self.app_host
     }
 
     // Returns the logging level
@@ -139,19 +162,28 @@ impl AppSettings {
     }
 
     // Keycloak settings accessors
-    pub fn key_cloak_base_url(&self) -> &str {
-        &self.key_cloak_base_url
+    pub fn keycloak_base_url(&self) -> &str {
+        &self.keycloak_base_url
     }
 
-    pub fn key_cloak_realm(&self) -> &str {
-        &self.key_cloak_realm
+    pub fn keycloak_realm(&self) -> &str {
+        &self.keycloak_realm
     }
 
-    pub fn key_cloak_client_id(&self) -> &str {
-        &self.key_cloak_client_id
+    pub fn keycloak_client_id(&self) -> &str {
+        &self.keycloak_client_id
     }
 
-    pub fn key_cloak_client_secret(&self) -> Option<&SecretString> {
-        self.key_cloak_client_secret.as_ref()
+    pub fn keycloak_client_secret(&self) -> Option<&SecretString> {
+        self.keycloak_client_secret.as_ref()
+    }
+
+    // TLS settings accessors
+    pub fn tls_cert_path(&self) -> &str {
+        &self.tls_cert_path
+    }
+
+    pub fn tls_key_path(&self) -> &str {
+        &self.tls_key_path
     }
 }

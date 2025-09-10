@@ -26,8 +26,11 @@ impl TestApp {
         tokio::spawn(async move { app.run().await.expect("Failed to start test server") });
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
-        let address = format!("http://{}", settings.app_address());
-        let http_client = reqwest::Client::new();
+        let address = format!("https://{}", settings.app_address());
+        let http_client = reqwest::Client::builder()
+            .danger_accept_invalid_certs(true)
+            .build()
+            .expect("Failed to build HTTP client");
 
         Self {
             address,

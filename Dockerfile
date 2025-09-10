@@ -20,6 +20,9 @@ WORKDIR /app
 # Copy the correct binary name
 COPY --from=builder /app/target/release/lgr_ehr /app/lgr_ehr
 
+# Copy TLS certificates
+COPY --from=builder /app/certs /app/certs
+
 # Copy CA certificates from builder
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 

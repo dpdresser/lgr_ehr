@@ -14,10 +14,10 @@ pub struct KeycloakState {
 impl KeycloakState {
     pub fn from_config(config: &AppSettings) -> Result<Self> {
         Ok(Self {
-            base_url: config.key_cloak_base_url().to_string(),
-            realm: config.key_cloak_realm().to_string(),
-            client_id: config.key_cloak_client_id().to_string(),
-            client_secret: config.key_cloak_client_secret().cloned(),
+            base_url: config.keycloak_base_url().to_string(),
+            realm: config.keycloak_realm().to_string(),
+            client_id: config.keycloak_client_id().to_string(),
+            client_secret: config.keycloak_client_secret().cloned(),
         })
     }
 
