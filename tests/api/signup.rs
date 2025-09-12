@@ -76,7 +76,7 @@ async fn signup_should_return_201() {
             "email": "test@example.com",
             "first_name": "Test",
             "last_name": "User",
-            "password": "password123"
+            "password": "Password123!"
         }))
         .await;
 

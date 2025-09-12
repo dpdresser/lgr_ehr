@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::{Result, anyhow};
 use poem::{
     EndpointExt, Route, Server,
@@ -6,19 +8,28 @@ use poem::{
     middleware::{Cors, Tracing},
     web::Data,
 };
-use poem_openapi::{OpenApi, OpenApiService, payload::PlainText};
+use poem_openapi::{
+    OpenApi, OpenApiService,
+    payload::{Json, PlainText},
+};
 use secrecy::ExposeSecret;
 use sqlx::postgres::PgPoolOptions;
+use tokio::sync::RwLock;
 
 use crate::{
     routes::{
-        auth::{KeycloakState, SignupApi},
         health::health_check_impl,
+        signup::{SignupRequest, SignupResult, signup_impl},
     },
+    services::keycloak_auth_provider::{KeycloakEndpoints, KeycloakUserStore},
+    state::AppState,
     utils::config::AppSettings,
 };
 
+pub mod domain;
 pub mod routes;
+pub mod services;
+pub mod state;
 pub mod utils;
 
 #[derive(Debug)]
@@ -27,39 +38,51 @@ struct EHRApi;
 #[OpenApi]
 impl EHRApi {
     #[oai(path = "/health", method = "get")]
-    #[tracing::instrument]
-    async fn health_check(&self, Data(db): Data<&sqlx::PgPool>) -> PlainText<&'static str> {
-        PlainText(health_check_impl(db).await)
+    async fn health_check(&self, state: Data<&AppState>) -> PlainText<&'static str> {
+        health_check_impl(state).await
+    }
+
+    #[oai(path = "/auth/signup", method = "post")]
+    async fn signup(&self, state: Data<&AppState>, payload: Json<SignupRequest>) -> SignupResult {
+        signup_impl(state, payload).await
     }
 }
 
 pub struct EHRApp {
     config: AppSettings,
+    state: AppState,
 }
 
 impl EHRApp {
-    pub fn build(config: AppSettings) -> Self {
-        EHRApp { config }
+    pub async fn build(config: AppSettings) -> Self {
+        let db = PgPoolOptions::new()
+            .connect(config.database_url.expose_secret())
+            .await
+            .expect("Failed to connect to the database");
+
+        let auth_provider = KeycloakUserStore::new(
+            reqwest::Client::new(),
+            KeycloakEndpoints::from_config(&config),
+        );
+
+        let state = AppState::new(
+            Arc::new(RwLock::new(auth_provider)),
+            Arc::new(RwLock::new(db)),
+        );
+
+        EHRApp { config, state }
     }
 
     pub async fn run(&self) -> Result<()> {
         tracing::info!("Starting EHR API server on {}", self.config.app_address());
-        let keycloak_state = KeycloakState::from_config(&self.config)?;
-
-        let db = PgPoolOptions::new()
-            .connect(self.config.database_url().expose_secret())
-            .await
-            .expect("Failed to connect to the database");
 
         sqlx::migrate!()
-            .run(&db)
+            .run(&*self.state.db.write().await)
             .await
             .expect("Failed to run database migrations");
 
         // OpenAPI
-        let apis = (EHRApi, SignupApi);
-
-        let api_service = OpenApiService::new(apis, "EHR API", "1.0")
+        let api_service = OpenApiService::new(EHRApi, "EHR API", "1.0")
             .server(format!("http://{}/api", self.config.app_address()));
         let ui = api_service.swagger_ui();
 
@@ -78,13 +101,12 @@ impl EHRApp {
             .nest("/docs", ui)
             .with(cors)
             .with(Tracing)
-            .data(db.clone())
-            .data(keycloak_state);
+            .data(self.state.clone());
 
         // TLS configuration
-        let cert_data = std::fs::read(self.config.tls_cert_path())
+        let cert_data = std::fs::read(&self.config.tls_cert_path)
             .map_err(|e| anyhow!("Failed to read TLS certificate: {}", e))?;
-        let key_data = std::fs::read(self.config.tls_key_path())
+        let key_data = std::fs::read(&self.config.tls_key_path)
             .map_err(|e| anyhow!("Failed to read TLS private key: {}", e))?;
         let cert = RustlsCertificate::new().key(key_data).cert(cert_data);
         let rustls_config = RustlsConfig::new().fallback(cert);

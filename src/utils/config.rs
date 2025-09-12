@@ -2,16 +2,16 @@ use secrecy::SecretString;
 
 #[derive(Clone, Debug)]
 pub struct AppSettings {
-    app_host: String,
-    app_port: u16,
-    database_url: SecretString,
-    log_level: String,
-    keycloak_base_url: String,
-    keycloak_realm: String,
-    keycloak_client_id: String,
-    keycloak_client_secret: Option<SecretString>,
-    tls_cert_path: String,
-    tls_key_path: String,
+    pub app_host: String,
+    pub app_port: u16,
+    pub database_url: SecretString,
+    pub log_level: String,
+    pub keycloak_base_url: String,
+    pub keycloak_realm: String,
+    pub keycloak_client_id: String,
+    pub keycloak_client_secret: Option<SecretString>,
+    pub tls_cert_path: String,
+    pub tls_key_path: String,
 }
 
 impl AppSettings {
@@ -116,24 +116,8 @@ impl AppSettings {
         }
     }
 
-    // Helper methods to access settings
-    pub fn database_url(&self) -> &SecretString {
-        &self.database_url
-    }
-
-    // Returns the full application address in the format "host:port"
     pub fn app_address(&self) -> String {
         format!("{}:{}", self.app_host, self.app_port)
-    }
-
-    // Returns the application host
-    pub fn app_host(&self) -> &str {
-        &self.app_host
-    }
-
-    // Returns the logging level
-    pub fn log_level(&self) -> &str {
-        &self.log_level
     }
 
     // Helper function to build database URL for any database name
@@ -159,31 +143,5 @@ impl AppSettings {
     // Build database URL for a specific database name
     pub fn database_url_for(db_name: &str) -> SecretString {
         Self::build_database_url(db_name)
-    }
-
-    // Keycloak settings accessors
-    pub fn keycloak_base_url(&self) -> &str {
-        &self.keycloak_base_url
-    }
-
-    pub fn keycloak_realm(&self) -> &str {
-        &self.keycloak_realm
-    }
-
-    pub fn keycloak_client_id(&self) -> &str {
-        &self.keycloak_client_id
-    }
-
-    pub fn keycloak_client_secret(&self) -> Option<&SecretString> {
-        self.keycloak_client_secret.as_ref()
-    }
-
-    // TLS settings accessors
-    pub fn tls_cert_path(&self) -> &str {
-        &self.tls_cert_path
-    }
-
-    pub fn tls_key_path(&self) -> &str {
-        &self.tls_key_path
     }
 }

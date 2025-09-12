@@ -20,7 +20,7 @@ impl TestApp {
 
         // Create settings with test database
         let settings = AppSettings::for_tests(test_db_url);
-        let app = EHRApp::build(settings.clone());
+        let app = EHRApp::build(settings.clone()).await;
 
         // Spawn the server
         tokio::spawn(async move { app.run().await.expect("Failed to start test server") });
