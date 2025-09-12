@@ -1,0 +1,38 @@
+{
+    "realm": "ehr",
+    "enabled": true,
+    "registrationAllowed": true,
+    "loginWithEmailAllowed": true,
+    "resetPasswordAllowed": true,
+    "roles": {
+        "realm": [
+            {
+                "name": "practice-owner"
+            },
+            {
+                "name": "practice-admin"
+            },
+            {
+                "name": "clinician"
+            }
+        ]
+    },
+    "clients": [
+        {
+            "clientId": "ehr-backend",
+            "name": "EHR Backend",
+            "protocol": "openid-connect",
+            "publicClient": false,
+            "serviceAccountsEnabled": true,
+            "standardFlowEnabled": true,
+            "directAccessGrantsEnabled": true,
+            "redirectUris": [
+                "http://localhost:3000/api/auth/callback",
+                "http://127.0.0.1:3000/api/auth/callback"
+            ],
+            "attributes": {
+                "pkce.code.challenge.method": "S256"
+            }
+        }
+    ]
+}

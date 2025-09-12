@@ -20,14 +20,17 @@ impl TestApp {
 
         // Create settings with test database
         let settings = AppSettings::for_tests(test_db_url);
-        let app = EHRApp::build(settings.clone());
+        let app = EHRApp::build(settings.clone()).await;
 
         // Spawn the server
         tokio::spawn(async move { app.run().await.expect("Failed to start test server") });
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
-        let address = format!("http://{}", settings.app_address());
-        let http_client = reqwest::Client::new();
+        let address = format!("https://{}", settings.app_address());
+        let http_client = reqwest::Client::builder()
+            .danger_accept_invalid_certs(true)
+            .build()
+            .expect("Failed to build HTTP client");
 
         Self {
             address,
@@ -41,6 +44,15 @@ impl TestApp {
     pub async fn health_check(&self) -> reqwest::Response {
         self.http_client
             .get(format!("{}/api/health", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request")
+    }
+
+    pub async fn post_signup(&self, body: serde_json::Value) -> reqwest::Response {
+        self.http_client
+            .post(format!("{}/api/auth/signup", &self.address))
+            .json(&body)
             .send()
             .await
             .expect("Failed to execute request")
