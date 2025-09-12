@@ -58,6 +58,24 @@ impl TestApp {
             .expect("Failed to execute request")
     }
 
+    pub async fn post_get_user_id(&self, body: serde_json::Value) -> reqwest::Response {
+        self.http_client
+            .post(format!("{}/api/auth/get_user_id", &self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request")
+    }
+
+    pub async fn post_delete_user(&self, body: serde_json::Value) -> reqwest::Response {
+        self.http_client
+            .post(format!("{}/api/auth/delete_user", &self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request")
+    }
+
     pub async fn cleanup(&mut self) {
         if !self.cleanup_called {
             cleanup_test_database(&self.db_name).await;
@@ -141,4 +159,8 @@ async fn cleanup_test_database(db_name: &str) {
             .execute(format!(r#"DROP DATABASE IF EXISTS "{}";"#, db_name).as_str())
             .await;
     }
+}
+
+pub fn generate_valid_email() -> String {
+    format!("{}@example.com", uuid::Uuid::new_v4().simple())
 }
