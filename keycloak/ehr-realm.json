@@ -7,13 +7,20 @@
     "roles": {
         "realm": [
             {
-                "name": "practice-owner"
+                "name": "owner",
+                "description": "Owner of the practice"
             },
             {
-                "name": "practice-admin"
+                "name": "admin",
+                "description": "Admin: intake, scheduling, paperwork, etc."
             },
             {
-                "name": "clinician"
+                "name": "biller",
+                "description": "Biller: handles billing and insurance"
+            },
+            {
+                "name": "clinician",
+                "description": "Clinician: provides patient care"
             }
         ]
     },

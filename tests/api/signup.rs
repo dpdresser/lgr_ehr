@@ -1,6 +1,6 @@
 use lgr_ehr::utils::tracing::init_tracing_for_tests;
 
-use crate::helpers::TestApp;
+use crate::helpers::{TestApp, generate_valid_email};
 
 #[tokio::test]
 async fn signup_should_return_400_for_malformed_request() {
@@ -16,13 +16,13 @@ async fn signup_should_return_400_for_malformed_request() {
         }),
         // Missing first name
         serde_json::json!({
-            "email": "test@example.com",
+            "email": generate_valid_email(),
             "last_name": "User",
             "password": "password123"
         }),
         // Missing password
         serde_json::json!({
-            "email": "test@example.com",
+            "email": generate_valid_email(),
             "first_name": "Test",
             "last_name": "User"
         }),
@@ -51,7 +51,7 @@ async fn signup_should_return_400_for_invalid_input() {
         }),
         // Password too short
         serde_json::json!({
-            "email": "test@example.com",
+            "email": generate_valid_email(),
             "first_name": "Test",
             "last_name": "User",
             "password": "short"
@@ -71,9 +71,11 @@ async fn signup_should_return_201() {
     init_tracing_for_tests();
     let mut app = TestApp::new().await;
 
+    let email = generate_valid_email();
+
     let response = app
         .post_signup(serde_json::json!({
-            "email": "test@example.com",
+            "email": email,
             "first_name": "Test",
             "last_name": "User",
             "password": "Password123!"
@@ -81,6 +83,72 @@ async fn signup_should_return_201() {
         .await;
 
     assert_eq!(response.status(), 201);
+
+    let response = app
+        .post_get_user_id(serde_json::json!({
+            "email": email,
+        }))
+        .await;
+
+    assert_eq!(response.status(), 200);
+    let body: serde_json::Value = response.json().await.expect("Failed to parse JSON");
+    assert!(
+        body.get("user_id").is_some(),
+        "Response body does not contain user_id"
+    );
+
+    let response = app.post_delete_user(body).await;
+
+    assert_eq!(response.status(), 200);
+
+    app.cleanup().await;
+}
+
+#[tokio::test]
+async fn signup_should_return_409_for_duplicate_email() {
+    init_tracing_for_tests();
+    let mut app = TestApp::new().await;
+
+    let email = generate_valid_email();
+
+    let response = app
+        .post_signup(serde_json::json!({
+            "email": email,
+            "first_name": "Test",
+            "last_name": "User",
+            "password": "Password123!"
+        }))
+        .await;
+
+    assert_eq!(response.status(), 201);
+
+    let response = app
+        .post_get_user_id(serde_json::json!({
+            "email": email,
+        }))
+        .await;
+
+    assert_eq!(response.status(), 200);
+    let body: serde_json::Value = response.json().await.expect("Failed to parse JSON");
+    assert!(
+        body.get("user_id").is_some(),
+        "Response body does not contain user_id"
+    );
+
+    let response = app
+        .post_signup(serde_json::json!({
+            "email": email,
+            "first_name": "Test",
+            "last_name": "User",
+            "password": "Password123!"
+        }))
+        .await;
+
+    assert_eq!(response.status(), 409);
+
+    let response = app.post_delete_user(body).await;
+
+    assert_eq!(response.status(), 200);
 
     app.cleanup().await;
 }

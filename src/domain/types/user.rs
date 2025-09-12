@@ -82,5 +82,6 @@ pub struct UserUpdate {
 pub enum UserRole {
     Owner,
     Admin,
+    Biller,
     Clinician,
 }

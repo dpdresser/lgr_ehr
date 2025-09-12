@@ -6,47 +6,26 @@ use poem::{
     http::Method,
     listener::{self, Listener, RustlsCertificate, RustlsConfig},
     middleware::{Cors, Tracing},
-    web::Data,
 };
-use poem_openapi::{
-    OpenApi, OpenApiService,
-    payload::{Json, PlainText},
-};
+use poem_openapi::OpenApiService;
 use secrecy::ExposeSecret;
 use sqlx::postgres::PgPoolOptions;
 use tokio::sync::RwLock;
 
 use crate::{
-    routes::{
-        health::health_check_impl,
-        signup::{SignupRequest, SignupResult, signup_impl},
-    },
     services::keycloak_auth_provider::{KeycloakEndpoints, KeycloakUserStore},
     state::AppState,
     utils::config::AppSettings,
 };
 
+pub mod api;
 pub mod domain;
 pub mod routes;
 pub mod services;
 pub mod state;
 pub mod utils;
 
-#[derive(Debug)]
-struct EHRApi;
-
-#[OpenApi]
-impl EHRApi {
-    #[oai(path = "/health", method = "get")]
-    async fn health_check(&self, state: Data<&AppState>) -> PlainText<&'static str> {
-        health_check_impl(state).await
-    }
-
-    #[oai(path = "/auth/signup", method = "post")]
-    async fn signup(&self, state: Data<&AppState>, payload: Json<SignupRequest>) -> SignupResult {
-        signup_impl(state, payload).await
-    }
-}
+use crate::api::EHRApi;
 
 pub struct EHRApp {
     config: AppSettings,

@@ -143,15 +143,64 @@ impl AuthProvider for KeycloakUserStore {
     }
 
     #[tracing::instrument(skip_all)]
-    async fn delete_user(&self, _user_id: String) -> Result<(), AuthProviderError> {
-        // Implementation to delete a user in Keycloak
-        unimplemented!()
+    async fn delete_user(&self, user_id: String) -> Result<(), AuthProviderError> {
+        let url = format!("{}/{}", &self.endpoints.users_endpoint, user_id);
+        let response = self
+            .client
+            .delete(&url)
+            .bearer_auth(&self.retrieve_auth_token().await?)
+            .send()
+            .await
+            .map_err(|e| {
+                AuthProviderError::AuthProviderError(format!(
+                    "Failed to send request to Keycloak: {e}"
+                ))
+            })?;
+
+        match response.status() {
+            StatusCode::NO_CONTENT => Ok(()),
+            StatusCode::NOT_FOUND => Err(AuthProviderError::AuthProviderError(
+                "User not found".to_string(),
+            )),
+            status => Err(AuthProviderError::AuthProviderError(format!(
+                "Failed to delete user in Keycloak: {status}"
+            ))),
+        }
     }
 
     #[tracing::instrument(skip_all)]
-    async fn get_user_id(&self, _email: Email) -> Result<Option<String>, AuthProviderError> {
-        // Implementation to get a user ID by email from Keycloak
-        unimplemented!()
+    async fn get_user_id(&self, email: Email) -> Result<Option<String>, AuthProviderError> {
+        let response = self
+            .client
+            .get(&self.endpoints.users_endpoint)
+            .bearer_auth(&self.retrieve_auth_token().await?)
+            .query(&[("email", email.as_ref().expose_secret())])
+            .send()
+            .await
+            .map_err(|e| {
+                AuthProviderError::AuthProviderError(format!(
+                    "Failed to send request to Keycloak: {e}"
+                ))
+            })?;
+
+        if !response.status().is_success() {
+            return Err(AuthProviderError::AuthProviderError(format!(
+                "Failed to get user from Keycloak: {}",
+                response.status()
+            )));
+        }
+
+        let users: Vec<serde_json::Value> = response.json().await.map_err(|e| {
+            AuthProviderError::AuthProviderError(format!("Failed to parse Keycloak response: {e}"))
+        })?;
+
+        if let Some(user) = users.first() {
+            if let Some(id) = user.get("id").and_then(|id| id.as_str()) {
+                return Ok(Some(id.to_string()));
+            }
+        }
+
+        Ok(None)
     }
 
     #[tracing::instrument(skip_all)]
