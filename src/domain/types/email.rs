@@ -1,8 +1,9 @@
 use std::hash::{Hash, Hasher};
 
-use color_eyre::eyre::{Result, eyre};
 use secrecy::{ExposeSecret, SecretString};
 use validator::{Validate, ValidateEmail};
+
+use crate::domain::error::app_error::{AppResult, ValidationError};
 
 #[derive(Debug, Clone)]
 pub struct Email {
@@ -40,13 +41,13 @@ impl Validate for Email {
 }
 
 impl Email {
-    pub fn new(email: String) -> Result<Self> {
+    pub fn new(email: String) -> AppResult<Self> {
         let email = Email {
             inner: SecretString::from(email),
         };
         email
             .validate()
-            .map_err(|e| eyre!("Invalid email format: {}", e))?;
+            .map_err(|_| ValidationError::InvalidEmail)?;
         Ok(email)
     }
 }

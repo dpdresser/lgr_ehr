@@ -5,7 +5,7 @@ use poem::{
     EndpointExt, Route, Server,
     http::Method,
     listener::{self, Listener, RustlsCertificate, RustlsConfig},
-    middleware::{Cors, Tracing},
+    middleware::{Cors, RequestId, SetHeader, Tracing},
 };
 use poem_openapi::OpenApiService;
 use secrecy::ExposeSecret;
@@ -79,6 +79,8 @@ impl EHRApp {
             .nest("/api", api_service)
             .nest("/docs", ui)
             .with(cors)
+            .with(RequestId::with_header_name("x-request-id"))
+            .with(SetHeader::new().appending("x-request-id", "{request-id}"))
             .with(Tracing)
             .data(self.state.clone());
 
