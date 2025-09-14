@@ -15,14 +15,10 @@ pub enum ValidationError {
 pub enum AuthProviderError {
     #[error("Upstream auth provider error: {0}")]
     Upstream(String),
-    #[error("Invalid admin credentials")]
-    InvalidAdminCredentials,
     #[error("User already exists")]
     UserExists,
     #[error("User not found")]
     UserNotFound,
-    #[error("Unauthorized")]
-    Unauthorized,
     #[error("Network error: {0}")]
     Network(String),
 }
@@ -31,8 +27,6 @@ pub enum AuthProviderError {
 pub enum DatabaseError {
     #[error("Postgres error: {0}")]
     Postgres(String),
-    #[error("Unknown error: {0}")]
-    Unknown(String),
 }
 
 #[derive(Debug, Error)]
@@ -60,4 +54,5 @@ impl AppError {
     }
 }
 
-pub type AppResult<T> = color_eyre::eyre::Result<T, AppError>;
+// Fixed type definition
+pub type AppResult<T> = Result<T, AppError>;

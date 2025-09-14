@@ -21,10 +21,6 @@ pub enum AppHttpResponse {
     Created(Json<Value>),
     #[oai(status = 400)]
     BadRequest(Json<ErrorBody>),
-    #[oai(status = 401)]
-    Unauthorized(Json<ErrorBody>),
-    #[oai(status = 403)]
-    Forbidden(Json<ErrorBody>),
     #[oai(status = 404)]
     NotFound(Json<ErrorBody>),
     #[oai(status = 409)]
@@ -65,20 +61,6 @@ impl AppHttpResponse {
             AppError::Validation(ValidationError::InvalidInput(msg)) => {
                 AppHttpResponse::BadRequest(Self::body("InvalidInput", &msg, request_id))
             }
-            AppError::AuthProvider(AuthProviderError::Unauthorized) => {
-                AppHttpResponse::Unauthorized(Self::body(
-                    "Unauthorized",
-                    "Authentication failed",
-                    request_id,
-                ))
-            }
-            AppError::AuthProvider(AuthProviderError::InvalidAdminCredentials) => {
-                AppHttpResponse::Forbidden(Self::body(
-                    "InvalidAdminCredentials",
-                    "Admin credentials are invalid",
-                    request_id,
-                ))
-            }
             AppError::AuthProvider(AuthProviderError::UserExists) => AppHttpResponse::Conflict(
                 Self::body("UserExists", "The user already exists", request_id),
             ),
@@ -93,13 +75,6 @@ impl AppHttpResponse {
             }
             AppError::Database(DatabaseError::Postgres(msg)) => {
                 AppHttpResponse::InternalServerError(Self::body("DatabaseError", &msg, request_id))
-            }
-            AppError::Database(DatabaseError::Unknown(msg)) => {
-                AppHttpResponse::InternalServerError(Self::body(
-                    "UnknownDatabaseError",
-                    &msg,
-                    request_id,
-                ))
             }
             AppError::Internal { source, .. } => AppHttpResponse::InternalServerError(Self::body(
                 "InternalServerError",

@@ -79,7 +79,9 @@ impl AuthProvider for KeycloakUserStore {
             .form(&form)
             .send()
             .await
-            .map_err(|_| AuthProviderError::InvalidAdminCredentials)?;
+            .map_err(|_| AuthProviderError::Upstream(
+                "Failed to send request to Keycloak".to_string(),
+            ))?;
 
         if !response.status().is_success() {
             return Err(AuthProviderError::Upstream(format!(
