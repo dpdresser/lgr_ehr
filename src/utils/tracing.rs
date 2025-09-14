@@ -1,4 +1,3 @@
-use color_eyre::config::HookBuilder;
 use poem::{FromRequest, Request, RequestBody};
 use tracing_appender::{
     non_blocking,
@@ -7,19 +6,13 @@ use tracing_appender::{
 use tracing_error::ErrorLayer;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, registry, util::SubscriberInitExt};
 
-pub fn init_tracing(log_level: &str, with_hook: bool) {
+pub fn init_tracing(log_level: &str) {
+    color_eyre::install().unwrap();
+
     let file_appender = RollingFileAppender::new(Rotation::DAILY, "./logs", "lgr_ehr.log");
 
     let (non_blocking_file, _guard) = non_blocking(file_appender);
     let (non_blocking_stdout, _guard2) = non_blocking(std::io::stdout());
-
-    // TODO: make this .env configurable
-    if with_hook {
-        HookBuilder::default()
-            .issue_url("https://github.com/dpdresser/lgr_ehr/issues/auto")
-            .install()
-            .unwrap();
-    }
 
     registry()
         .with(
@@ -34,10 +27,10 @@ pub fn init_tracing(log_level: &str, with_hook: bool) {
         .with(
             fmt::layer()
                 .with_writer(non_blocking_stdout)
-                .with_ansi(true),
+                .with_ansi(true)
+                .with_target(false),
         )
         .with(EnvFilter::new(log_level))
-        .with(tracing_subscriber::fmt::layer().with_target(false))
         .with(ErrorLayer::default())
         .init();
 
@@ -46,16 +39,18 @@ pub fn init_tracing(log_level: &str, with_hook: bool) {
 }
 
 pub fn init_tracing_for_tests() {
+    color_eyre::install().unwrap();
+
     let (non_blocking_stdout, _guard2) = non_blocking(std::io::stdout());
 
     registry()
         .with(
             fmt::layer()
                 .with_writer(non_blocking_stdout)
-                .with_ansi(true),
+                .with_ansi(true)
+                .with_target(false),
         )
         .with(EnvFilter::new("debug,sqlx=warn,hyper=warn,reqwest=warn"))
-        .with(tracing_subscriber::fmt::layer().with_target(false))
         .with(ErrorLayer::default())
         .init();
 

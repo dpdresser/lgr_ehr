@@ -3,7 +3,10 @@ use poem_openapi::{Object, payload::Json};
 use serde_json::Value;
 
 use crate::{
-    domain::{error::app_error::AppError, types::email::Email},
+    domain::{
+        error::app_error::{AppError, AppResult},
+        types::email::Email,
+    },
     state::AppState,
 };
 
@@ -15,9 +18,7 @@ pub struct GetUserIdRequest {
 pub async fn get_user_id_impl(
     state: Data<&AppState>,
     payload: Json<GetUserIdRequest>,
-) -> Result<Value, AppError> {
-    tracing::info!("Received get_user_id request for email: {}", payload.email);
-
+) -> AppResult<Value> {
     let email = Email::new(payload.email.clone())?;
 
     match state.auth_provider.read().await.get_user_id(email).await? {

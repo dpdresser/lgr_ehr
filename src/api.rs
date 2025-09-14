@@ -22,19 +22,19 @@ pub struct EHRApi;
 #[OpenApi]
 impl EHRApi {
     #[oai(path = "/health", method = "get")]
-    #[tracing::instrument(name = "health_check", skip_all, err)]
+    #[tracing::instrument(name = "health_check", skip_all, fields(req_id=%ctx.request_id))]
     async fn health_check(
         &self,
         ctx: RequestContext,
         state: Data<&AppState>,
-    ) -> Result<PlainText<&str>, AppHttpResponse> {
+    ) -> color_eyre::eyre::Result<PlainText<&str>, AppHttpResponse> {
         health_check_impl(state)
             .await
             .map_err(|e| AppHttpResponse::from_app_error(e, &ctx.request_id))
     }
 
     #[oai(path = "/auth/signup", method = "post")]
-    #[tracing::instrument(name = "signup", skip_all)]
+    #[tracing::instrument(name = "signup", skip_all, fields(req_id=%ctx.request_id))]
     async fn signup(
         &self,
         ctx: RequestContext,
@@ -48,7 +48,7 @@ impl EHRApi {
     }
 
     #[oai(path = "/auth/get_user_id", method = "post")]
-    #[tracing::instrument(name = "get_user_id", skip_all)]
+    #[tracing::instrument(name = "get_user_id", skip_all, fields(req_id=%ctx.request_id))]
     async fn get_user_id(
         &self,
         ctx: RequestContext,
@@ -62,7 +62,7 @@ impl EHRApi {
     }
 
     #[oai(path = "/auth/delete_user", method = "post")]
-    #[tracing::instrument(name = "delete_user", skip_all)]
+    #[tracing::instrument(name = "delete_user", skip_all, fields(req_id=%ctx.request_id))]
     async fn delete_user(
         &self,
         ctx: RequestContext,

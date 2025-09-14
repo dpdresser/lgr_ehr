@@ -31,6 +31,7 @@ impl Hash for Email {
 impl Eq for Email {}
 
 impl Validate for Email {
+    #[tracing::instrument(name = "email_validation", skip_all)]
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         if !self.inner.expose_secret().validate_email() {
             return Err(validator::ValidationErrors::new());
@@ -41,6 +42,7 @@ impl Validate for Email {
 }
 
 impl Email {
+    #[tracing::instrument(name = "email_creation", skip_all)]
     pub fn new(email: String) -> AppResult<Self> {
         let email = Email {
             inner: SecretString::from(email),

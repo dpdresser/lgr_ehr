@@ -31,6 +31,7 @@ impl Hash for Password {
 impl Eq for Password {}
 
 impl Validate for Password {
+    #[tracing::instrument(name = "password_validation", skip_all)]
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         let password = self.inner.expose_secret();
 
@@ -54,6 +55,7 @@ impl Validate for Password {
 }
 
 impl Password {
+    #[tracing::instrument(name = "password_creation", skip_all)]
     pub fn new(password: String) -> AppResult<Self> {
         let password = Password {
             inner: SecretString::from(password),

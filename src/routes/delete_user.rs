@@ -2,7 +2,10 @@ use poem::web::Data;
 use poem_openapi::{Object, payload::Json};
 use serde_json::Value;
 
-use crate::{domain::error::app_error::AppError, state::AppState};
+use crate::{
+    domain::error::app_error::{AppError, AppResult},
+    state::AppState,
+};
 
 #[derive(Object, Debug)]
 pub struct DeleteUserRequest {
@@ -12,9 +15,7 @@ pub struct DeleteUserRequest {
 pub async fn delete_user_impl(
     state: Data<&AppState>,
     payload: Json<DeleteUserRequest>,
-) -> Result<Value, AppError> {
-    tracing::info!("Received delete_user request for user: {}", payload.user_id);
-
+) -> AppResult<Value> {
     if payload.user_id.trim().is_empty() {
         return Err(AppError::Validation(
             crate::domain::error::app_error::ValidationError::InvalidInput(

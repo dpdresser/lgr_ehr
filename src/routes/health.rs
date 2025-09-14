@@ -2,13 +2,11 @@ use poem::web::Data;
 use poem_openapi::payload::PlainText;
 
 use crate::{
-    domain::error::app_error::{AppError, DatabaseError},
+    domain::error::app_error::{AppResult, DatabaseError},
     state::AppState,
 };
 
-pub async fn health_check_impl(
-    state: Data<&AppState>,
-) -> Result<PlainText<&'static str>, AppError> {
+pub async fn health_check_impl(state: Data<&AppState>) -> AppResult<PlainText<&'static str>> {
     sqlx::query("SELECT 1")
         .execute(&*state.db.write().await)
         .await

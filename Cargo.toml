@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1"
 async-trait = "0.1"
-color-eyre = { version = "0.6", features = ["issue-url"] }
+color-eyre = "0.6"
 dotenvy = "0.15"
 http = "1"
 poem = { version = "3", features = ["rustls", "server", "requestid"] }

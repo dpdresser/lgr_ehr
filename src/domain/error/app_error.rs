@@ -60,4 +60,4 @@ impl AppError {
     }
 }
 
-pub type AppResult<T> = Result<T, AppError>;
+pub type AppResult<T> = color_eyre::eyre::Result<T, AppError>;

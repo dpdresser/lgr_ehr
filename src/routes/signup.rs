@@ -4,7 +4,7 @@ use serde_json::Value;
 
 use crate::{
     domain::{
-        error::app_error::AppError,
+        error::app_error::AppResult,
         types::{email::Email, password::Password, user::User},
     },
     state::AppState,
@@ -18,12 +18,7 @@ pub struct SignupRequest {
     pub last_name: String,
 }
 
-pub async fn signup_impl(
-    state: Data<&AppState>,
-    payload: Json<SignupRequest>,
-) -> Result<Value, AppError> {
-    tracing::info!("Received signup request for email: {}", payload.email);
-
+pub async fn signup_impl(state: Data<&AppState>, payload: Json<SignupRequest>) -> AppResult<Value> {
     let email = Email::new(payload.email.clone())?;
 
     let password = Password::new(payload.password.clone())?;
