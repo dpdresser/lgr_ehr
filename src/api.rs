@@ -5,13 +5,15 @@ use poem_openapi::{
 };
 
 use crate::{
+    domain::error::http_response::AppHttpResponse,
     routes::{
-        delete_user::{DeleteUserRequest, DeleteUserResult, delete_user_impl},
-        get_user_id::{GetUserIdRequest, GetUserIdResult, get_user_id_impl},
+        delete_user::{DeleteUserRequest, delete_user_impl},
+        get_user_id::{GetUserIdRequest, get_user_id_impl},
         health::health_check_impl,
-        signup::{SignupRequest, SignupResult, signup_impl},
+        signup::{SignupRequest, signup_impl},
     },
     state::AppState,
+    utils::tracing::RequestContext,
 };
 
 #[derive(Debug)]
@@ -20,30 +22,56 @@ pub struct EHRApi;
 #[OpenApi]
 impl EHRApi {
     #[oai(path = "/health", method = "get")]
-    async fn health_check(&self, state: Data<&AppState>) -> PlainText<&'static str> {
-        health_check_impl(state).await
+    #[tracing::instrument(name = "health_check", skip_all, fields(req_id=%ctx.request_id))]
+    async fn health_check(
+        &self,
+        ctx: RequestContext,
+        state: Data<&AppState>,
+    ) -> color_eyre::eyre::Result<PlainText<&str>, AppHttpResponse> {
+        health_check_impl(state)
+            .await
+            .map_err(|e| AppHttpResponse::from_app_error(e, &ctx.request_id))
     }
 
     #[oai(path = "/auth/signup", method = "post")]
-    async fn signup(&self, state: Data<&AppState>, payload: Json<SignupRequest>) -> SignupResult {
-        signup_impl(state, payload).await
+    #[tracing::instrument(name = "signup", skip_all, fields(req_id=%ctx.request_id))]
+    async fn signup(
+        &self,
+        ctx: RequestContext,
+        state: Data<&AppState>,
+        payload: Json<SignupRequest>,
+    ) -> AppHttpResponse {
+        match signup_impl(state, payload).await {
+            Ok(response) => AppHttpResponse::Created(Json(response)),
+            Err(e) => AppHttpResponse::from_app_error(e, &ctx.request_id),
+        }
     }
 
     #[oai(path = "/auth/get_user_id", method = "post")]
+    #[tracing::instrument(name = "get_user_id", skip_all, fields(req_id=%ctx.request_id))]
     async fn get_user_id(
         &self,
+        ctx: RequestContext,
         state: Data<&AppState>,
         payload: Json<GetUserIdRequest>,
-    ) -> GetUserIdResult {
-        get_user_id_impl(state, payload).await
+    ) -> AppHttpResponse {
+        match get_user_id_impl(state, payload).await {
+            Ok(response) => AppHttpResponse::Ok(Json(response)),
+            Err(e) => AppHttpResponse::from_app_error(e, &ctx.request_id),
+        }
     }
 
     #[oai(path = "/auth/delete_user", method = "post")]
+    #[tracing::instrument(name = "delete_user", skip_all, fields(req_id=%ctx.request_id))]
     async fn delete_user(
         &self,
+        ctx: RequestContext,
         state: Data<&AppState>,
         payload: Json<DeleteUserRequest>,
-    ) -> DeleteUserResult {
-        delete_user_impl(state, payload).await
+    ) -> AppHttpResponse {
+        match delete_user_impl(state, payload).await {
+            Ok(response) => AppHttpResponse::Ok(Json(response)),
+            Err(e) => AppHttpResponse::from_app_error(e, &ctx.request_id),
+        }
     }
 }

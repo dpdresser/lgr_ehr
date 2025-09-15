@@ -1,19 +1,16 @@
 use poem::web::Data;
 use poem_openapi::payload::PlainText;
 
-use crate::state::AppState;
+use crate::{
+    domain::error::app_error::{AppResult, DatabaseError},
+    state::AppState,
+};
 
-#[tracing::instrument(skip_all)]
-pub async fn health_check_impl(state: Data<&AppState>) -> PlainText<&'static str> {
-    let message = if sqlx::query("SELECT 1")
+pub async fn health_check_impl(state: Data<&AppState>) -> AppResult<PlainText<&'static str>> {
+    sqlx::query("SELECT 1")
         .execute(&*state.db.write().await)
         .await
-        .is_ok()
-    {
-        "EHR API is running"
-    } else {
-        "EHR API is not running"
-    };
+        .map_err(|_| DatabaseError::Postgres("Failed to execute health check query".into()))?;
 
-    PlainText(message)
+    Ok(PlainText("EHR API is running"))
 }

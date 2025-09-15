@@ -1,10 +1,14 @@
+use poem::{FromRequest, Request, RequestBody};
 use tracing_appender::{
     non_blocking,
     rolling::{RollingFileAppender, Rotation},
 };
+use tracing_error::ErrorLayer;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, registry, util::SubscriberInitExt};
 
 pub fn init_tracing(log_level: &str) {
+    color_eyre::install().unwrap();
+
     let file_appender = RollingFileAppender::new(Rotation::DAILY, "./logs", "lgr_ehr.log");
 
     let (non_blocking_file, _guard) = non_blocking(file_appender);
@@ -23,9 +27,11 @@ pub fn init_tracing(log_level: &str) {
         .with(
             fmt::layer()
                 .with_writer(non_blocking_stdout)
-                .with_ansi(true),
+                .with_ansi(true)
+                .with_target(false),
         )
         .with(EnvFilter::new(log_level))
+        .with(ErrorLayer::default())
         .init();
 
     std::mem::forget(_guard);
@@ -33,18 +39,38 @@ pub fn init_tracing(log_level: &str) {
 }
 
 pub fn init_tracing_for_tests() {
+    color_eyre::install().unwrap();
+
     let (non_blocking_stdout, _guard2) = non_blocking(std::io::stdout());
 
     registry()
         .with(
             fmt::layer()
                 .with_writer(non_blocking_stdout)
-                .with_ansi(true),
+                .with_ansi(true)
+                .with_target(false),
         )
         .with(EnvFilter::new("debug,sqlx=warn,hyper=warn,reqwest=warn"))
+        .with(ErrorLayer::default())
         .init();
 
     std::mem::forget(_guard2);
+}
+
+#[derive(Clone)]
+pub struct RequestContext {
+    pub request_id: String,
+}
+
+impl<'a> FromRequest<'a> for RequestContext {
+    async fn from_request(req: &'a Request, _: &mut RequestBody) -> poem::Result<Self> {
+        let request_id = req
+            .header("x-request-id")
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+
+        Ok(RequestContext { request_id })
+    }
 }
 
 // TODO: Add log file cleanup policy

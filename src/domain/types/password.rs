@@ -1,8 +1,9 @@
 use std::hash::{Hash, Hasher};
 
-use color_eyre::eyre::{Result, eyre};
 use secrecy::{ExposeSecret, SecretString};
 use validator::Validate;
+
+use crate::domain::error::app_error::{AppResult, ValidationError};
 
 #[derive(Debug, Clone)]
 pub struct Password {
@@ -30,6 +31,7 @@ impl Hash for Password {
 impl Eq for Password {}
 
 impl Validate for Password {
+    #[tracing::instrument(name = "password_validation", skip_all)]
     fn validate(&self) -> std::result::Result<(), validator::ValidationErrors> {
         let password = self.inner.expose_secret();
 
@@ -53,13 +55,14 @@ impl Validate for Password {
 }
 
 impl Password {
-    pub fn new(password: String) -> Result<Self> {
+    #[tracing::instrument(name = "password_creation", skip_all)]
+    pub fn new(password: String) -> AppResult<Self> {
         let password = Password {
             inner: SecretString::from(password),
         };
         password
             .validate()
-            .map_err(|e| eyre!("Invalid password format: {}", e))?;
+            .map_err(|_| ValidationError::InvalidPassword)?;
         Ok(password)
     }
 }
