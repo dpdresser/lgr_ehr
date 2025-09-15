@@ -3,7 +3,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::domain::error::app_error::{
-    AppError, AuthProviderError, DatabaseError, ValidationError,
+    AppError, AuthProviderError, DatabaseError, EmailClientError, ValidationError,
 };
 
 #[derive(Object, Serialize, Debug)]
@@ -75,6 +75,16 @@ impl AppHttpResponse {
             }
             AppError::Database(DatabaseError::Postgres(msg)) => {
                 AppHttpResponse::InternalServerError(Self::body("DatabaseError", &msg, request_id))
+            }
+            AppError::EmailClient(EmailClientError::Smtp(msg)) => {
+                AppHttpResponse::InternalServerError(Self::body("EmailError", &msg, request_id))
+            }
+            AppError::EmailClient(EmailClientError::Other(msg)) => {
+                AppHttpResponse::InternalServerError(Self::body(
+                    "EmailError",
+                    &msg.to_string(),
+                    request_id,
+                ))
             }
             AppError::Internal { source, .. } => AppHttpResponse::InternalServerError(Self::body(
                 "InternalServerError",

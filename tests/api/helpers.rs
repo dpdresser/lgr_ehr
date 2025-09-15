@@ -1,3 +1,6 @@
+use std::time::Duration;
+
+use anyhow::anyhow;
 use lgr_ehr::{EHRApp, utils::config::AppSettings};
 use secrecy::ExposeSecret;
 use sqlx::{Executor, PgPool, postgres::PgPoolOptions};
@@ -7,6 +10,7 @@ pub struct TestApp {
     http_client: reqwest::Client,
     _db_pool: PgPool,
     db_name: String,
+    mailhog_client: MailHog,
     cleanup_called: bool,
 }
 
@@ -32,11 +36,14 @@ impl TestApp {
             .build()
             .expect("Failed to build HTTP client");
 
+        let mailhog_client = MailHog::from_config(&settings);
+
         Self {
             address,
             http_client,
             _db_pool: db_pool,
             db_name,
+            mailhog_client,
             cleanup_called: false,
         }
     }
@@ -74,6 +81,23 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute request")
+    }
+
+    pub async fn post_send_test_email(&self, body: serde_json::Value) -> reqwest::Response {
+        self.http_client
+            .post(format!("{}/api/auth/test_email", &self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request")
+    }
+
+    pub async fn wait_for_email(
+        &self,
+        to: &str,
+        timeout: Duration,
+    ) -> Result<serde_json::Value, String> {
+        self.mailhog_client.wait_for_to(to, timeout).await
     }
 
     pub async fn cleanup(&mut self) {
@@ -163,4 +187,53 @@ async fn cleanup_test_database(db_name: &str) {
 
 pub fn generate_valid_email() -> String {
     format!("{}@example.com", uuid::Uuid::new_v4().simple())
+}
+
+pub struct MailHog {
+    base: String,
+    http_client: reqwest::Client,
+}
+
+impl MailHog {
+    pub fn from_config(config: &AppSettings) -> Self {
+        let base = format!("http://{}:8025", config.smtp_host);
+        let http_client = reqwest::Client::new();
+        Self { base, http_client }
+    }
+
+    pub async fn wait_for_to(
+        &self,
+        to: &str,
+        timeout: Duration,
+    ) -> Result<serde_json::Value, String> {
+        let start = std::time::Instant::now();
+        while start.elapsed() < timeout {
+            let url = format!("{}/api/v2/search?kind=to&query={}", self.base, to);
+            let response = self
+                .http_client
+                .get(&url)
+                .send()
+                .await
+                .map_err(|e| e.to_string())?
+                .error_for_status()
+                .map_err(|e| e.to_string())?;
+
+            let json = response
+                .json::<serde_json::Value>()
+                .await
+                .map_err(|e| e.to_string())?;
+            if json["total"].as_u64().unwrap_or(0) > 0 {
+                return Ok(json);
+            }
+            if start.elapsed() >= timeout {
+                return Err(anyhow!("Timeout reached waiting for email to {}", to).to_string());
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        Err(format!(
+            "Timeout reached: No email found to {} within {:?}",
+            to, timeout
+        ))
+    }
 }

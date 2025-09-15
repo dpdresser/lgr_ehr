@@ -10,6 +10,9 @@ pub struct AppSettings {
     pub keycloak_realm: String,
     pub keycloak_client_id: String,
     pub keycloak_client_secret: Option<SecretString>,
+    pub smtp_host: String,
+    pub smtp_port: u16,
+    pub smtp_from: String,
     pub tls_cert_path: String,
     pub tls_key_path: String,
 }
@@ -55,6 +58,15 @@ impl AppSettings {
             .ok()
             .map(SecretString::from);
 
+        // SMTP settings
+        let smtp_host = std::env::var("SMTP_HOST_PROD")
+            .expect("SMTP_HOST_PROD must be set in .env or environment");
+        let smtp_port = std::env::var("SMTP_PORT")
+            .unwrap_or_else(|_| "1025".into())
+            .parse()
+            .expect("SMTP_PORT must be a valid u16");
+        let smtp_from = std::env::var("SMTP_FROM").unwrap_or_else(|_| "no-reply@lgrehr.dev".into());
+
         // TLS settings
         let tls_cert_path =
             std::env::var("TLS_CERT_PATH").unwrap_or_else(|_| "certs/dev/cert.pem".into());
@@ -70,6 +82,9 @@ impl AppSettings {
             keycloak_realm,
             keycloak_client_id,
             keycloak_client_secret,
+            smtp_host,
+            smtp_port,
+            smtp_from,
             tls_cert_path,
             tls_key_path,
         }
@@ -96,6 +111,15 @@ impl AppSettings {
             .ok()
             .map(SecretString::from);
 
+        // SMTP settings
+        let smtp_host = std::env::var("SMTP_HOST_DEV")
+            .expect("SMTP_HOST_DEV must be set in .env or environment");
+        let smtp_port = std::env::var("SMTP_PORT")
+            .unwrap_or_else(|_| "1025".into())
+            .parse()
+            .expect("SMTP_PORT must be a valid u16");
+        let smtp_from = std::env::var("SMTP_FROM").unwrap_or_else(|_| "no-reply@lgrehr.dev".into());
+
         // TLS settings
         let tls_cert_path =
             std::env::var("TLS_CERT_PATH").unwrap_or_else(|_| "certs/dev/cert.pem".into());
@@ -111,6 +135,9 @@ impl AppSettings {
             keycloak_realm,
             keycloak_client_id,
             keycloak_client_secret,
+            smtp_host,
+            smtp_port,
+            smtp_from,
             tls_cert_path,
             tls_key_path,
         }

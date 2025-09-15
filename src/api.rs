@@ -10,6 +10,7 @@ use crate::{
         delete_user::{DeleteUserRequest, delete_user_impl},
         get_user_id::{GetUserIdRequest, get_user_id_impl},
         health::health_check_impl,
+        send_test_email::{SendEmailRequest, send_test_email_impl},
         signup::{SignupRequest, signup_impl},
     },
     state::AppState,
@@ -70,6 +71,20 @@ impl EHRApi {
         payload: Json<DeleteUserRequest>,
     ) -> AppHttpResponse {
         match delete_user_impl(state, payload).await {
+            Ok(response) => AppHttpResponse::Ok(Json(response)),
+            Err(e) => AppHttpResponse::from_app_error(e, &ctx.request_id),
+        }
+    }
+
+    #[oai(path = "/auth/test_email", method = "post")]
+    #[tracing::instrument(name = "send_test_email", skip_all, fields(req_id=%ctx.request_id))]
+    async fn send_test_email(
+        &self,
+        ctx: RequestContext,
+        state: Data<&AppState>,
+        payload: Json<SendEmailRequest>,
+    ) -> AppHttpResponse {
+        match send_test_email_impl(state, payload).await {
             Ok(response) => AppHttpResponse::Ok(Json(response)),
             Err(e) => AppHttpResponse::from_app_error(e, &ctx.request_id),
         }

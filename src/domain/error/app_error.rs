@@ -30,6 +30,14 @@ pub enum DatabaseError {
 }
 
 #[derive(Debug, Error)]
+pub enum EmailClientError {
+    #[error("SMTP error: {0}")]
+    Smtp(String),
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
+}
+
+#[derive(Debug, Error)]
 pub enum AppError {
     #[error(transparent)]
     Validation(#[from] ValidationError),
@@ -37,6 +45,8 @@ pub enum AppError {
     AuthProvider(#[from] AuthProviderError),
     #[error(transparent)]
     Database(#[from] DatabaseError),
+    #[error(transparent)]
+    EmailClient(#[from] EmailClientError),
     #[error("Internal server error")]
     Internal {
         #[source]

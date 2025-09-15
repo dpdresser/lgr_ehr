@@ -13,7 +13,10 @@ use sqlx::postgres::PgPoolOptions;
 use tokio::sync::RwLock;
 
 use crate::{
-    services::keycloak_auth_provider::{KeycloakEndpoints, KeycloakUserStore},
+    services::{
+        keycloak_auth_provider::{KeycloakEndpoints, KeycloakUserStore},
+        lettre_mailhog_email_client::LettreMailhogEmailClient,
+    },
     state::AppState,
     utils::config::AppSettings,
 };
@@ -44,9 +47,16 @@ impl EHRApp {
             KeycloakEndpoints::from_config(&config),
         );
 
+        let email_client = LettreMailhogEmailClient::new(
+            &config.smtp_host,
+            config.smtp_port,
+            config.smtp_from.clone(),
+        );
+
         let state = AppState::new(
             Arc::new(RwLock::new(auth_provider)),
             Arc::new(RwLock::new(db)),
+            Arc::new(RwLock::new(email_client)),
         );
 
         EHRApp { config, state }
